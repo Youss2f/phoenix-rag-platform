@@ -1,13 +1,17 @@
 spring:
-  # Disable auto-configuration that requires external services
+  main:
+    allow-bean-definition-overriding: true
+  
+  # Disable problematic auto-configurations
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
       - org.springframework.ai.autoconfigure.ollama.OllamaAutoConfiguration
       - org.springframework.ai.autoconfigure.vectorstore.pgvector.PgVectorStoreAutoConfiguration
-  
+
+  # H2 in-memory database for tests
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -18,11 +22,17 @@ spring:
       ddl-auto: create-drop
     show-sql: false
   
+  # Mock security - disable JWT validation
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8080/realms/test
 
+# Spring AI - disable by setting to none
+spring.ai:
+  ollama:
+    enabled: false
+
 server:
-  port: 8081
+  port: 0

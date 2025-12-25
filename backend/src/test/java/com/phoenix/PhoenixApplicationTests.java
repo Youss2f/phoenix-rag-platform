@@ -1,16 +1,20 @@
 package com.phoenix;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@EnableAutoConfiguration(exclude = {
+        KafkaAutoConfiguration.class
+})
 class PhoenixApplicationTests {
 
     @Test
     void contextLoads() {
-        // Context load test - verifies Spring Boot starts successfully
+        // Verifies Spring Boot starts successfully with test profile
     }
 }
