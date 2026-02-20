@@ -1,153 +1,102 @@
-# Project Phoenix: Enterprise RAG Knowledge Platform
+# Phoenix RAG Platform
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Tech Stack](https://img.shields.io/badge/stack-Java%2021%20%7C%20Spring%20AI%20%7C%20React-blue)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
+An enterprise-grade Retrieval-Augmented Generation platform built with Spring AI, pgvector, Apache Kafka, and React.
 
-A secure SaaS platform enabling enterprises to query their confidential documents via an intelligent chat interface, powered by **Retrieval-Augmented Generation (RAG)**.
-
----
+[![CI Pipeline](https://github.com/Youss2f/phoenix-rag-platform/actions/workflows/ci-pipeline.yml/badge.svg)](https://github.com/Youss2f/phoenix-rag-platform/actions/workflows/ci-pipeline.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Architecture
 
-The system follows a containerized microservices architecture with asynchronous, event-driven communication.
-
-```mermaid
-graph TD
-    subgraph User Facing
-        A[React/Next.js UI]
-    end
-    subgraph Backend Services
-        B[API Gateway / Spring Cloud]
-        C[Auth / Keycloak]
-        D[Ingestion Service / Java]
-        E[Chat Service / Spring AI]
-    end
-    subgraph Data & Infrastructure
-        F[Apache Kafka]
-        G[PostgreSQL + pgvector]
-        H[LLM / Ollama]
-    end
-    A -- HTTPS/SSE --> B
-    B -- OIDC --> C
-    B -- REST --> D
-    D -- Publishes Event --> F
-    F -- Consumes Event --> D
-    E -- Vector Search --> G
-    E -- Prompt --> H
 ```
-
----
+[User] → [React Frontend] → [Spring Boot API]
+                                    ↓
+                        [Document Upload + Tika Extraction]
+                                    ↓
+                        [Kafka Ingestion Pipeline]
+                                    ↓
+                        [Document Chunking + Storage]
+                                    ↓
+                        [PostgreSQL + pgvector]
+                                    ↓
+                        [Keycloak Auth (OAuth2/OIDC)]
+```
 
 ## Tech Stack
 
-| Domain | Technology | Role |
-|--------|------------|------|
-| Backend | Java 21, Spring Boot 3.3, Spring AI | Business logic, AI processing, APIs |
-| Frontend | React 19 (Vite), TypeScript, Tailwind CSS | User interface, Real-time chat |
-| Data | PostgreSQL 16 + pgvector | Metadata and vector storage |
-| Messaging | Apache Kafka | Asynchronous ingestion pipeline |
-| Security | Keycloak (OIDC) | Authentication & Authorization (RBAC) |
-| DevOps | Docker, Docker Compose, GitHub Actions | Containerization, Orchestration, CI/CD |
-| AI (Local) | Ollama (Llama3/Mistral) | Large Language Model for text generation |
+| Layer | Technology |
+|-------|-----------|
+| Backend | Java 21, Spring Boot 3.3, Spring AI |
+| Vector DB | PostgreSQL 16 + pgvector |
+| Messaging | Apache Kafka |
+| Auth | Keycloak (OAuth2/OIDC) |
+| Frontend | React 18 + TypeScript + Tailwind CSS |
+| LLM | Ollama (Llama3) |
+| Containerization | Docker Compose |
+| CI/CD | GitHub Actions |
+| License | MIT |
 
----
+## Project Status
 
-## Quick Start
+- [x] Project scaffolding and multi-module Maven setup
+- [x] Docker Compose environment (PostgreSQL + pgvector, Kafka, Keycloak, Ollama)
+- [x] Keycloak OAuth2/OIDC security integration (JWT resource server)
+- [x] Document upload REST API with async processing (returns 202 Accepted)
+- [x] Document text extraction via Apache Tika
+- [x] Document chunking with configurable size and overlap
+- [x] Kafka-based ingestion pipeline (producer/consumer with document-ingestion topic)
+- [x] Document status tracking (PENDING → PROCESSING → COMPLETED/FAILED)
+- [x] React frontend scaffold with chat UI and dark theme
+- [x] GitHub Actions CI pipeline
+- [ ] Embedding generation with Spring AI + Ollama
+- [ ] Vector similarity search via pgvector
+- [ ] Chat service with RAG retrieval and LLM responses
+- [ ] Frontend API integration with SSE streaming
+- [ ] Document upload UI in frontend
+- [ ] Keycloak realm configuration-as-code
+- [ ] Multi-tenant support
+- [ ] Production deployment on OCI
 
-**Prerequisites:** Docker and Docker Compose must be installed.
+## Getting Started
 
-1. **Clone the repository:**
+### Prerequisites
+- Java 21+
+- Docker & Docker Compose
+- Node.js 18+ (for frontend)
+
+### Run with Docker
+
 ```bash
+# Clone and configure
 git clone https://github.com/Youss2f/phoenix-rag-platform.git
 cd phoenix-rag-platform
-```
-
-2. **Configure environment:**
-```bash
 cp .env.example .env
+
+# Start all services
+docker compose up -d --build
+
+# Access points:
+# Frontend:       http://localhost:3000
+# Backend API:    http://localhost:8081
+# Keycloak Admin: http://localhost:8080 (admin/admin)
 ```
 
-3. **Launch the full stack:**
-```bash
-docker-compose up -d --build
-```
-
-4. **Access the application:**
-   - Frontend: http://localhost:3000
-   - Keycloak Admin: http://localhost:8080 (admin/admin)
-   - API Gateway: http://localhost:8081
-
----
-
-## Configuration
-
-Create a `.env` file at the project root based on `.env.example`:
-
-```properties
-# PostgreSQL
-POSTGRES_DB=phoenix_db
-POSTGRES_USER=admin
-POSTGRES_PASSWORD=secret
-
-# Keycloak
-KEYCLOAK_ADMIN=admin
-KEYCLOAK_ADMIN_PASSWORD=admin
-```
-
----
-
-## Project Structure
-
-```
-phoenix-rag-platform/
-├── .github/
-│   ├── workflows/
-│   │   └── ci-pipeline.yml
-│   ├── ISSUE_TEMPLATE/
-│   └── PULL_REQUEST_TEMPLATE.md
-├── backend/
-│   ├── src/main/java/
-│   └── pom.xml
-├── frontend/
-│   ├── src/
-│   └── package.json
-├── docker-compose.yml
-├── .env.example
-└── README.md
-```
-
----
-
-## Development
-
-### Backend
-```bash
-cd backend
-./mvnw spring-boot:run
-```
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
----
-
-## Testing
+### Run Locally (Development)
 
 ```bash
-# Unit tests
-cd backend && ./mvnw test
+# Start infrastructure only
+docker compose up -d postgres zookeeper kafka keycloak ollama
 
-# Integration tests with Testcontainers
-cd backend && ./mvnw verify
+# Run backend
+cd backend && ./mvnw spring-boot:run
+
+# Run frontend
+cd frontend && npm install && npm run dev
 ```
 
----
+## Why This Project
+
+Most enterprise AI deployments need RAG — the ability to ground LLM responses in proprietary company data. This platform demonstrates a production-aligned approach: event-driven document ingestion, semantic vector search, and secure multi-tenant architecture.
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License. See [LICENSE](LICENSE) for details.
