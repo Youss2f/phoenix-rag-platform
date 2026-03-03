@@ -8,6 +8,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,15 +29,18 @@ public class DocumentProcessingService {
     private final DocumentRepository documentRepository;
     private final DocumentChunkRepository chunkRepository;
     private final DocumentService documentService;
+    private final EmbeddingModel embeddingModel;
     private final Tika tika;
 
     public DocumentProcessingService(
             DocumentRepository documentRepository,
             DocumentChunkRepository chunkRepository,
-            DocumentService documentService) {
+            DocumentService documentService,
+            EmbeddingModel embeddingModel) {
         this.documentRepository = documentRepository;
         this.chunkRepository = chunkRepository;
         this.documentService = documentService;
+        this.embeddingModel = embeddingModel;
         this.tika = new Tika();
     }
 
@@ -66,14 +70,21 @@ public class DocumentProcessingService {
             List<String> chunks = chunkText(text);
             log.info("Created {} chunks from document", chunks.size());
 
-            // Save chunks (embeddings will be added later with Spring AI)
+            // Save chunks with embeddings
             for (int i = 0; i < chunks.size(); i++) {
+                String chunkText = chunks.get(i);
+
+                float[] vector = embeddingModel.embed(chunkText);
+
                 DocumentChunk chunk = new DocumentChunk();
                 chunk.setDocument(document);
-                chunk.setContent(chunks.get(i));
+                chunk.setContent(chunkText);
                 chunk.setChunkIndex(i);
+                chunk.setEmbedding(vector);
                 chunkRepository.save(chunk);
             }
+
+            log.info("Embedded and saved {} chunks for document: {}", chunks.size(), documentId);
 
             // Update status
             document.setStatus(Document.DocumentStatus.COMPLETED);
